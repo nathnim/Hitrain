@@ -274,14 +274,18 @@ if(typeof maplibregl==='undefined'){setTimeout(()=>window.__nolib=1);showErr('Kh
   </div>
 </div>
 <script>
-/* ===== Bộ nạp: lấy lõi mô phỏng ==== */
-    const GAS_URL ='https://script.google.com/macros/s/AKfycbzdk42Ey1XKXX0QqFFzyWH1JFWGfarD_sJlhiCC8vNlWbPC-OVhcxfwH-ORbNXTWwRglw/exec';   exec
+/* ===== Bộ nạp: lấy lõi mô phỏng từ Google Apps Script ===== */
+    const GAS_URL ='https://script.google.com/macros/s/AKfycbzOBqesVg9saQYZhNcq863b391U0WyyAqlF3mBD1Q5MJCe68-PSttVG3kbjEqwmI7RvYQ/exec';
+const BUILD='20261124b';   // phải khớp với Core.gs cùng bộ   // ví dụ https://script.google.com/macros/s/AKfy.../exec
 (function(){
   const msg=t=>document.getElementById('bootMsg').textContent=t;
   const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
   const ua=encodeURIComponent((navigator.userAgent||'').slice(0,120));
-  async function getJSON(u){const r=await fetch(u);return r.json();}
-  async function fetchCore(tok){const r=await fetch(GAS_URL+'?a=core&t='+encodeURIComponent(tok||'')+'&ua='+ua);return r.text();}
+  async function tfetch(u,o,ms){const ac=new AbortController();const t=setTimeout(()=>ac.abort(),ms||30000);try{return await fetch(u,Object.assign({signal:ac.signal},o||{}));}finally{clearTimeout(t);}}
+  async function getJSON(u){const r=await tfetch(u);return r.json();}
+  async function fetchCore(tok){const r=await tfetch(GAS_URL+'?a=core&t='+encodeURIComponent(tok||'')+'&ua='+ua+'&b='+BUILD+'&r='+Date.now(),null,45000);return r.text();}
+  const t0=Date.now();const tick=setInterval(()=>{const el=document.getElementById('bootMsg');if(!el)return clearInterval(tick);const s=Math.round((Date.now()-t0)/1000);if(s>=8&&!/giây/.test(el.textContent))el.textContent+=' ('+s+' giây – Apps Script khởi động lần đầu có thể mất 10–20 giây)';else if(s>=8)el.textContent=el.textContent.replace(/\(\d+ giây/,'('+s+' giây');},1000);
+  const mismatch=()=>{msg('Lõi trên Apps Script (Core.gs) chưa khớp với index.html này (bản '+BUILD+'). Hãy dán Core.gs mới, rồi Triển khai → Quản lý tùy chọn triển khai → Phiên bản mới.');};
   function run(code){const sc=document.createElement('script');sc.textContent=code;document.body.appendChild(sc);document.getElementById('boot').remove();}
   function login(){return new Promise(res=>{const f=document.getElementById('loginF');f.style.display='block';msg('Trang yêu cầu đăng nhập');
     f.onsubmit=async ev=>{ev.preventDefault();document.getElementById('loginErr').textContent='';msg('Đang kiểm tra…');
@@ -292,7 +296,7 @@ if(typeof maplibregl==='undefined'){setTimeout(()=>window.__nolib=1);showErr('Kh
   const tokValid=t=>{if(!t)return false;const p=t.split('.');return p.length===3&&+p[1]>Date.now();};
   async function boot(){
     if(GAS_URL.indexOf('http')!==0){msg('Chưa cấu hình GAS_URL trong index.html');return;}
-    let cfg;try{cfg=await getJSON(GAS_URL+'?a=cfg&ua='+ua);}catch(e){msg('Không kết nối được máy chủ Apps Script. Thử tải lại trang.');return;}
+    let cfg;try{cfg=await getJSON(GAS_URL+'?a=cfg&ua='+ua);}catch(e){msg('Không kết nối được máy chủ Apps Script (kiểm tra GAS_URL và quyền truy cập "Bất kỳ ai"). Thử tải lại trang.');return;}
     window.HITRAIN_CFG=cfg;
     let code=null;
     if(cfg.login){
@@ -300,9 +304,10 @@ if(typeof maplibregl==='undefined'){setTimeout(()=>window.__nolib=1);showErr('Kh
       msg('Đang tải lõi mô phỏng…');code=await fetchCore(tok);
       if(code.indexOf('/*AUTH*/')===0){LS.del('hitrain_tok');tok=await login();msg('Đang tải lõi mô phỏng…');code=await fetchCore(tok);}
       if(code.indexOf('/*AUTH*/')===0){msg('Không có quyền truy cập');return;}
+      if(code.indexOf(BUILD)<0){mismatch();return;}
     }else{
-      const key='hitrain_core_'+cfg.version;code=LS.get(key);
-      if(!code){msg('Đang tải lõi mô phỏng…');code=await fetchCore('');if(code.indexOf('/*AUTH*/')!==0){
+      const key='hitrain_core_'+cfg.version+'_'+BUILD;code=LS.get(key);if(code&&code.indexOf(BUILD)<0)code=null;
+      if(!code){msg('Đang tải lõi mô phỏng…');try{code=await fetchCore('');}catch(e){msg('Tải lõi quá lâu hoặc lỗi mạng. Thử tải lại trang.');return;}if(code.indexOf(BUILD)<0){mismatch();return;}if(code.indexOf('/*AUTH*/')!==0){
         try{Object.keys(localStorage).filter(k=>k.indexOf('hitrain_core_')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}LS.set(key,code);}}
     }
     run(code);
