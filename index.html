@@ -2,351 +2,367 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Mô phỏng 3D Đường sắt tốc độ cao Bắc – Nam 350 km/h</title>
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" crossorigin="anonymous"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HiTrack – Mô hình 3D kết cấu đường sắt tốc độ cao</title>
+<meta name="application-name" content="HiTrack">
+<meta name="apple-mobile-web-app-title" content="HiTrack">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:rgba(15,23,38,.86);--fg:#eef3fa;--mut:#9fb0c6;--acc:#ff7a00;--ok:#38c172;--line:rgba(255,255,255,.12)}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-serif;color:var(--fg);background:#0b1220}
-#map{position:absolute;inset:0}
-.glass{background:var(--bg);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
-#hud{position:absolute;top:10px;left:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;z-index:5;max-width:calc(100% - 20px)}
-#gauge{width:92px;height:92px;flex:none}
-.hrow{font-size:12px;color:var(--mut);line-height:1.35}
-.hrow b{color:var(--fg);font-weight:600}
-#hudTitle{font-size:13px;font-weight:700;margin-bottom:3px;color:#fff}
-#struct{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600;margin-top:3px}
-#bar{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;z-index:5;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;width:min(760px,calc(100% - 20px))}
-button,select{font:inherit;font-size:13px;color:var(--fg);background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:9px;padding:6px 10px;cursor:pointer}
-button:hover{background:rgba(255,255,255,.16)}
-button.on{background:var(--acc);border-color:var(--acc);color:#111;font-weight:700}
-#play{min-width:86px;font-weight:700;background:var(--ok);color:#06210f;border-color:var(--ok)}
-#play.pause{background:#f6c343;border-color:#f6c343}
-select option{color:#111}
-#seek{flex:1 1 100%;accent-color:var(--acc);margin:2px 0 0}
-.seg{display:flex;gap:4px;flex-wrap:wrap}
-#panel{position:absolute;top:10px;right:10px;bottom:10px;width:340px;z-index:6;display:flex;flex-direction:column;overflow:hidden}
-#panel .tabs{display:flex;border-bottom:1px solid var(--line)}
-#panel .tabs button{flex:1;border:0;border-radius:0;background:transparent;padding:10px 4px;font-size:13px;color:var(--mut)}
-#panel .tabs button.on{color:#fff;background:rgba(255,255,255,.08);box-shadow:inset 0 -2px 0 var(--acc)}
-#panel .body{flex:1;overflow:auto;padding:10px 12px;font-size:13px}
-.tab{display:none}.tab.on{display:block}
-table{width:100%;border-collapse:collapse;font-size:12px}
-td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{color:var(--mut);font-weight:600;position:sticky;top:-10px;background:#152033}
-tr.st{cursor:pointer}tr.st:hover{background:rgba(255,255,255,.06)}
-tr.done td{color:#7f8da0}
-tr.cur td{background:rgba(255,122,0,.18)}
-.stop{color:var(--ok);font-weight:700}
-.pass{color:var(--mut)}
-label.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0}
-input[type=range]{accent-color:var(--acc)}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px}
-.kv div:nth-child(odd){color:var(--mut)}
-.note{font-size:11.5px;color:var(--mut);line-height:1.45;margin-top:8px}
-a{color:#7cc4ff}
-h4{margin:12px 0 6px;font-size:13px;color:#fff}
-#planSel{max-width:64%}
-#plan{width:100%;height:330px;display:block;background:rgba(0,0,0,.18);border-radius:8px;margin-top:8px;cursor:crosshair}
-#chart{width:100%;height:150px;display:block;background:rgba(0,0,0,.18);border-radius:8px}
-.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:10px;font-size:12px}
-.legend i{width:18px;height:4px;border-radius:2px;display:inline-block}
-#togglePanel{position:absolute;top:10px;right:10px;z-index:7;display:block;transition:right .25s}
-@media (min-width:821px){body:not(.nopanel):not(.clean) #togglePanel{right:360px}body.nopanel #panel{display:none}}
-/* chế độ thoáng: ẩn bảng, rút gọn thanh điều khiển và HUD */
-body.clean #panel{display:none!important}
-body.clean #bar .seg,body.clean #bar #seek,body.clean #bar #reset{display:none}
-body.clean #bar{width:auto;padding:5px 6px;opacity:.82}
-body.clean #hud{padding:6px 8px;opacity:.85}
-body.clean #hud .hx,body.clean #hudTitle{display:none}
-body.clean #gauge{width:60px;height:60px}
-body.clean #togglePanel{opacity:.7}
-body.clean .maplibregl-ctrl-bottom-right,body.clean .maplibregl-ctrl-bottom-left{display:none}
-#bar,#hud,#panel{transition:opacity .25s}
-.stmk{display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer}
-.stmk .dot{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid #0d47a1;box-shadow:0 0 0 2px rgba(255,255,255,.6)}
-.stmk .lb{margin-top:2px;font-size:11px;font-weight:700;color:#0d2a55;background:rgba(255,255,255,.88);padding:1px 5px;border-radius:5px;white-space:nowrap}
-.stmk.major .dot{width:16px;height:16px;border-color:#c62828}
-.hide-lb .stmk:not(.major) .lb{display:none}
-.plmk{font-size:10.5px;color:#4a5568;font-weight:600;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;pointer-events:none}.plmk.isl{color:#0d47a1;font-style:italic}.hide-lb .plmk:not(.isl){display:none}
-.cntlb{font-size:9.5px;font-weight:700;color:#7a4a1c;text-shadow:0 0 2px #fff,0 0 3px #fff;pointer-events:none;white-space:nowrap}
-.frmk{width:10px;height:10px;background:#607d8b;border:2px solid #fff;transform:rotate(45deg)}
-#trainDot{width:18px;height:18px;border-radius:50%;background:#ff3d00;border:3px solid #fff;box-shadow:0 0 0 0 rgba(255,61,0,.7);animation:pulse 1.6s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,61,0,.7)}70%{box-shadow:0 0 0 16px rgba(255,61,0,0)}100%{box-shadow:0 0 0 0 rgba(255,61,0,0)}}
-body.inside .maplibregl-marker{display:none!important}
-#cabv{position:absolute;inset:0;z-index:4;pointer-events:none;display:none;--dt:55%;--bh:120px}
-#cabv.on{display:block}
-#cabv .wsf{position:absolute;left:0;right:0;top:0;height:var(--dt);overflow:hidden}
-#cabv .glassw{position:absolute;left:3%;right:3%;top:9%;bottom:-40px;border-radius:46% 46% 0 0/26% 26% 0 0;box-shadow:0 0 0 3000px #2b303a,inset 0 0 0 7px #161a21,inset 0 18px 30px rgba(0,0,0,.35)}
-#cabTun{position:absolute;left:0;right:0;top:45%;text-align:center;color:#ffd27f;font-weight:700;display:none}
-#cabv.tun #cabTun{display:block}#cabv.tun .glassw{background:rgba(8,8,10,.94)}
-body.inside .maplibregl-ctrl-bottom-right,body.inside .maplibregl-ctrl-bottom-left{display:none}
-#cabv .wiper{position:absolute;bottom:4px;left:12%;width:38%;height:4px;background:#111;border-radius:3px;transform-origin:0 50%;transform:rotate(-4deg);opacity:.85}
-#cabv .dash{position:absolute;left:0;right:0;top:var(--dt);bottom:var(--bh);background:linear-gradient(#545b68,#2e333d 30%,#23272f);border-top:5px solid #161a21;display:flex;gap:6px;padding:8px 8px 6px;align-items:stretch}
-#cabv .ins{flex:1;background:#14171d;border-radius:12px;border:1px solid #3c4350;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;min-width:0}
-#cabv .lbl{font-size:10px;color:#9fb0c6;letter-spacing:.5px;text-align:center}
-#spd{width:100%;max-height:100%;flex:1}
-#tvm{font:800 26px/1 "Courier New",monospace;padding:6px 8px;border-radius:6px;margin:4px 0;min-width:72px;text-align:center;border:2px solid #000}
-#tvm.free{background:#2ecc40;color:#000}#tvm.lim{background:#fff;color:#000}#tvm.stop{background:#e53935;color:#fff}
-#tvm.flash{animation:fl .5s steps(1) infinite}@keyframes fl{50%{filter:brightness(.35)}}
-.lever{width:84%;height:8px;background:#2b2f38;border-radius:4px;position:relative;margin-top:4px;overflow:hidden}
-#levbar{position:absolute;top:0;bottom:0;left:50%;width:0;background:#38c172}
-#cabv .dmi{align-items:stretch;justify-content:flex-start;font-size:11px;line-height:1.45;color:#dfe7f1;padding:6px 7px;font-family:"Segoe UI",Roboto,sans-serif}
-#cabv .dmi b{color:#ffd27f}
-@media (max-width:820px){#tvm{font-size:18px;min-width:52px;padding:3px 6px;margin:2px 0}#cabv .dmi{font-size:9.5px;line-height:1.3}#cabv .dash{padding:5px;gap:4px}}
-#cabin{position:absolute;inset:0;z-index:4;pointer-events:none;display:none;overflow:hidden}
-#cabin.on{display:block}
-#cabin .win{position:absolute;left:7%;right:7%;top:20%;bottom:30%;border-radius:36px;box-shadow:0 0 0 3000px #3a4252,inset 0 0 0 9px #cfd4db,inset 0 0 0 14px #9aa3ad,inset 0 0 40px rgba(0,0,0,.35);transition:background .4s}
-#cabin.tun .win{background:rgba(8,8,10,.93)}
-#cabin .frame{position:absolute;left:0;right:0;top:0;height:20%;background:linear-gradient(#2a303c,#3a4252)}
-#cabin .seat{position:absolute;bottom:0;width:34%;height:26%;background:linear-gradient(#24427a,#1a2f57);border-radius:26px 26px 0 0;box-shadow:inset 0 6px 0 rgba(255,255,255,.12)}
-#cabin .s1{left:4%}#cabin .s2{right:4%}
-#cabin .tray{position:absolute;bottom:21%;left:30%;right:30%;height:3%;background:#c8ccd2;border-radius:6px}
-#tunnelTxt{position:absolute;left:0;right:0;top:45%;text-align:center;color:#ffd27f;font-size:15px;font-weight:700;display:none}
-#cabin.tun #tunnelTxt{display:block}
-.maplibregl-ctrl-bottom-left{bottom:16px}
-#discBadge{position:absolute;left:50%;transform:translateX(-50%);bottom:0;z-index:9;font-size:10px;color:#fff;background:rgba(183,28,28,.82);padding:2px 9px;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap}
-#disc{position:absolute;inset:0;z-index:60;background:rgba(5,10,20,.6);display:none;align-items:center;justify-content:center;padding:14px}
-#disc.on{display:flex}
-#disc .box{max-width:520px;max-height:86vh;overflow:auto;padding:16px 18px;font-size:13px;line-height:1.5}
-#disc .box b:first-child{font-size:15px;color:#ffd27f}
-#disc ul{padding-left:18px;margin:6px 0}#disc li{margin:4px 0}
-.discNote{border:1px solid rgba(255,138,128,.5);background:rgba(183,28,28,.15);border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.5;margin-bottom:10px}
-.discNote ul{padding-left:16px;margin:4px 0}
-#toast{position:absolute;top:120px;left:50%;transform:translateX(-50%);z-index:8;padding:8px 14px;font-size:13px;display:none}
-.maplibregl-ctrl-bottom-right{bottom:0}
-@media (max-width:820px){
-  #panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:58%;display:none}
-  #panel.open{display:flex}
-  #togglePanel{display:block}
-  #hud{top:8px;left:8px;padding:8px 10px;gap:8px;max-width:calc(100% - 70px)}
-  #gauge{width:70px;height:70px}
-  .hrow{font-size:11px}
-  #bar{bottom:8px;padding:6px}
-  button,select{font-size:12px;padding:5px 8px}
+:root{--ink:#102231;--ink2:#1d3a52;--mut:#5d6f7e;--line:#dde4ea;--acc:#e8590c;--acc2:#ff8a3d;--glass:rgba(255,255,255,.82);--glass2:rgba(255,255,255,.94);--sh:0 6px 24px rgba(16,34,49,.14),0 1px 3px rgba(16,34,49,.10);--r:14px;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--ink);background:#dfe8ef;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+#app{position:fixed;inset:0}
+#view{position:absolute;inset:0}
+canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.glass{background:var(--glass);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border:1px solid rgba(255,255,255,.7);box-shadow:var(--sh)}
+/* ---------- Header ---------- */
+.top{position:absolute;left:0;right:0;top:0;padding:calc(10px + var(--sat)) calc(12px + var(--sar)) 0 calc(12px + var(--sal));pointer-events:none;display:flex;flex-direction:column;gap:8px;z-index:5}
+.top>*{pointer-events:auto}
+.tbar{display:flex;gap:8px;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 8px;border-radius:var(--r);min-width:0}
+.logo{flex:none;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--ink2),var(--ink));display:grid;place-items:center;box-shadow:inset 0 -2px 0 rgba(255,255,255,.08)}
+.brand h1{margin:0;font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
+.brand h1 small{display:block;font-size:11.5px;font-weight:500;color:var(--mut);letter-spacing:0}
+.spacer{flex:1}
+.ibtn{flex:none;height:44px;border-radius:var(--r);padding:0 14px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.7)}
+.ibtn svg{width:18px;height:18px}
+.ibtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ibtn .lbl-t{white-space:nowrap}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 4px;margin:0 -2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.7);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:999px;padding:6px 14px 6px 8px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(16,34,49,.10);white-space:nowrap;line-height:1.15;text-align:left;transition:background .2s,color .2s,transform .15s}
+.chip:active{transform:scale(.97)}
+.chip i{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;color:#fff;font-weight:800}
+.chip small{display:block;font-size:10.5px;color:var(--mut);font-weight:500}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.on small{color:#b9c8d4}
+/* ---------- Options popover ---------- */
+.opts{position:absolute;top:calc(64px + var(--sat));right:calc(12px + var(--sar));width:min(420px,calc(100vw - 24px));border-radius:16px;padding:14px;display:none;flex-direction:column;gap:10px;z-index:8;max-height:calc(100dvh - 160px);overflow:auto;background:var(--glass2)}
+.opts.open{display:flex;animation:pop .18s ease}
+@keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.opts h3{margin:0 0 2px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+.orow{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.orow[hidden]{display:none}
+.ol{font-size:13px;font-weight:600}
+.seg{display:flex;background:#eef2f5;border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:7px 11px;font-size:12.5px;white-space:nowrap;border-radius:8px;font-weight:500;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--acc);font-weight:700;box-shadow:0 1px 3px rgba(16,34,49,.15)}
+.sw{display:flex;gap:6px}
+.tg{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:500}
+.tg.on{border-color:var(--acc);color:var(--acc);font-weight:700;background:#fff6f0}
+/* ---------- Bottom toolbar ---------- */
+.bottom{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(40px + var(--sab));display:flex;gap:10px;align-items:center;padding:6px;border-radius:16px;z-index:5;max-width:calc(100vw - 24px)}
+.views{display:flex;gap:2px}
+.views button{border:0;background:none;padding:9px 12px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.views button svg{width:16px;height:16px;opacity:.8}
+.views button.on{background:var(--ink);color:#fff}
+.exp{display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;border-left:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.exp input{width:120px;accent-color:var(--acc)}
+/* ---------- Floating part card ---------- */
+#card{position:absolute;left:calc(12px + var(--sal));bottom:calc(100px + var(--sab));width:min(360px,calc(100vw - 24px));border-radius:16px;padding:12px 14px;z-index:6;display:none}
+#card.show{display:block;animation:pop .2s ease}
+#card .ch{display:flex;gap:10px;align-items:flex-start}
+#card b{font-size:14.5px;display:block;line-height:1.3}
+#card .cd{font-size:12.5px;color:var(--mut);margin-top:3px;line-height:1.4}
+#card .ca{display:flex;gap:8px;margin-top:10px}
+#card .ca button{flex:1;border-radius:10px;padding:8px;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff}
+#card .ca button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.x{border:0;background:none;font-size:18px;color:var(--mut);padding:0 4px;line-height:1;margin-left:auto}
+/* ---------- Drawer ---------- */
+#drawer{position:absolute;z-index:9;display:flex;flex-direction:column;background:var(--glass2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:-8px 0 32px rgba(16,34,49,.18);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.dh{display:flex;align-items:center;gap:8px;padding:14px 14px 0}
+.dh b{font-size:15px}
+.grab{display:none}
+.tabs{display:flex;gap:4px;padding:10px 12px 10px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:none;padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--mut);white-space:nowrap}
+.tabs button.on{background:var(--ink);color:#fff}
+.content{flex:1;overflow:auto;padding:14px 16px 28px;font-size:13.5px;line-height:1.55;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* ---------- Footer ---------- */
+#foot{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;align-items:center;justify-content:center;gap:10px;padding:6px calc(12px + var(--sar)) calc(6px + var(--sab)) calc(12px + var(--sal));font-size:11.5px;color:#3b5060;background:linear-gradient(to top,rgba(255,255,255,.92),rgba(255,255,255,.6));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.8);white-space:nowrap;overflow:hidden}
+#foot .au{overflow:hidden;text-overflow:ellipsis}
+#foot button{border:0;background:none;color:var(--acc);font-weight:700;font-size:11.5px;padding:2px 4px;flex:none}
+/* ---------- Labels ---------- */
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+.lbl{position:absolute;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:var(--ink);color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer;will-change:transform;transition:background .15s}
+.lbl:hover{background:var(--ink2)}
+.lbl.on{background:var(--acc);box-shadow:0 0 0 4px rgba(232,89,12,.25),0 2px 6px rgba(0,0,0,.35)}
+#hint{position:absolute;left:50%;top:calc(130px + var(--sat));transform:translateX(-50%);font-size:12px;color:#fff;background:rgba(16,34,49,.72);padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;transition:opacity .6s;z-index:3}
+#loading{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;color:var(--mut);z-index:20;background:#dfe8ef}
+/* ---------- Desktop / tablet landscape ---------- */
+@media(min-width:900px){
+  #drawer{top:0;right:0;bottom:0;width:410px;border-left:1px solid rgba(255,255,255,.7);transform:translateX(105%);padding-top:var(--sat)}
+  #drawer.open{transform:none}
+  body.dopen .top{right:410px}
+  body.dopen .bottom{left:calc((100vw - 410px)/2)}
+  body.dopen #foot{right:410px}
+  body.dopen .opts{right:calc(422px + var(--sar))}
 }
+/* ---------- Phone / tablet portrait ---------- */
+@media(max-width:899px){
+  .brand{padding:5px 10px 5px 6px}
+  .logo{width:30px;height:30px}
+  .brand h1{font-size:16px}
+  .ibtn{height:42px;padding:0 11px}
+  .ibtn .lbl-t{display:none}
+  .opts{left:12px;right:12px;width:auto;top:calc(116px + var(--sat))}
+  .seg button{padding:8px 10px;font-size:13px}
+  .bottom{left:12px;right:12px;transform:none;max-width:none;bottom:calc(36px + var(--sab));justify-content:space-between}
+  .views{flex:none}
+  .views button{padding:9px 9px;font-size:12.5px}
+  .views button span{display:none}
+  .views button svg{opacity:1;width:18px;height:18px}
+  .exp{flex:1;padding:0 6px 0 10px;min-width:0}
+  .exp span{display:none}
+  .exp input{width:auto;flex:1;min-width:40px}
+  #card{left:12px;right:12px;width:auto;bottom:calc(94px + var(--sab))}
+  #drawer{left:0;right:0;bottom:0;height:62dvh;border-radius:20px 20px 0 0;transform:translateY(105%);box-shadow:0 -8px 32px rgba(16,34,49,.22);padding-bottom:var(--sab)}
+  #drawer.open{transform:none}
+  #drawer.full{height:92dvh}
+  .grab{display:flex;justify-content:center;padding:8px 0 0;cursor:pointer}
+  .grab span{width:44px;height:5px;border-radius:3px;background:#c4ced6}
+  .dh{padding:6px 14px 0}
+  .content{font-size:14px}
+  .lbl{width:20px;height:20px;margin:-10px 0 0 -10px;font-size:10px}
+  #foot{justify-content:space-between;font-size:11px}
+  #hint{top:calc(118px + var(--sat))}
+}
+@media(max-width:420px){.brand h1 small{display:none}}
+@media(min-width:600px) and (max-width:899px){
+  .views button span{display:inline}
+  #card{left:12px;right:auto;width:380px}
+  #drawer{left:50%;transform:translate(-50%,105%);width:min(720px,100vw)}
+  #drawer.open{transform:translate(-50%,0)}
+}
+/* ---------- Content styles ---------- */
+.ibox{border:1px solid #f3c7ab;background:#fff8f3;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.ibox.empty{border-color:var(--line);background:#f5f8fa;color:var(--mut)}
+.ih{display:flex;gap:8px;align-items:center}
+.ih b{flex:1;font-size:14.5px}
+dl{margin:8px 0 10px;display:grid;grid-template-columns:86px 1fr;gap:5px 10px}
+dt{color:var(--mut);font-size:12.5px}
+dd{margin:0}
+.num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+.num.on{background:var(--acc)}
+.li{display:flex;gap:10px;align-items:flex-start;padding:10px 8px;border-radius:10px;cursor:pointer;min-height:44px;transition:background .15s}
+.li+.li{border-top:1px solid #eef2f5}
+.li:hover{background:#f3f6f8}
+.li.on{background:#fff3eb}
+.li .t{font-weight:600;font-size:13.5px}
+.li .s{color:var(--mut);font-size:12px}
+.sec-t{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:18px 0 8px;font-weight:700}
+.kv{width:100%;border-collapse:collapse;font-size:13px}
+.kv td{border-bottom:1px solid #eef2f5;padding:7px 4px;vertical-align:top}
+.kv td:first-child{color:var(--mut);width:40%}
+.cmp{border-collapse:collapse;font-size:12.5px;min-width:700px}
+.cmp th,.cmp td{border-bottom:1px solid #e8edf1;padding:8px 7px;text-align:left;vertical-align:top}
+.cmp th{position:sticky;top:0;background:#f2f5f8;font-weight:700}
+.cmp tr.on td{background:#fff3eb}
+.cmp tbody tr{cursor:pointer}
+.cmp.spd{min-width:600px}
+.scroll{overflow-x:auto;margin:0 -16px;padding:0 16px}
+.note{font-size:12.5px;color:#4a5d6c;background:#f3f6f9;border-radius:10px;padding:10px 12px;margin-top:14px;line-height:1.55}
+.warn{background:#fff4e5;border:1px solid #f5c07a;color:#8a4b00;border-radius:10px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}
+.calc{background:#f3f6f9;border-radius:10px;padding:6px 14px;font-size:13px}
+.calc p{margin:9px 0}
+.mut{color:var(--mut)}
+.src{font-size:12.5px;padding-left:20px;margin:4px 0}
+.src li{margin:5px 0}
+.src a{color:#1f5f8b;text-decoration:none;border-bottom:1px solid rgba(31,95,139,.25)}
+.src a:hover{border-bottom-color:#1f5f8b}
+.src em{color:var(--mut);font-style:normal;font-size:11.5px}
+.big{font-size:17px;font-weight:800;margin:0;letter-spacing:-.01em}
+.sub{color:var(--mut);margin:2px 0 10px}
+.disc{border-left:3px solid var(--acc);background:#fffaf6;border-radius:0 10px 10px 0;padding:12px 14px;font-size:13px;line-height:1.6;color:#3d4c58}
+.disc b{color:var(--ink)}
+.author{display:flex;gap:12px;align-items:center;background:#f3f6f9;border-radius:12px;padding:12px 14px;margin-top:14px}
+.author .av{flex:none;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--acc2),var(--acc));display:grid;place-items:center;color:#fff;font-weight:800}
+.author div{font-size:12.5px;line-height:1.45}
+.author b{font-size:13.5px}
+
+/* ---------- Màn hình chờ & đăng nhập ---------- */
+#loading{flex-direction:column;gap:14px;text-align:center;padding:24px;background:radial-gradient(1200px 600px at 50% 0%,#cfe0ec,#e9f0f4 60%,#dfe8ef)}
+#loading .spin{width:34px;height:34px;border-radius:50%;border:3px solid #c9d6e0;border-top-color:var(--acc);animation:sp 1s linear infinite;margin:0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loading .err{max-width:460px;color:#9a3412;background:#fff4ec;border:1px solid #f5c7a8;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.55;text-align:left}
+#loading button{border:0;background:var(--ink);color:#fff;border-radius:10px;padding:9px 16px;font-weight:600}
+#login{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:20px;background:radial-gradient(1200px 700px at 50% -10%,#bcd3e6,#e6eef3 55%,#dfe8ef)}
+#login.show{display:grid}
+#login form{width:min(380px,100%);border-radius:20px;padding:26px 24px 20px;background:rgba(255,255,255,.9);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(16,34,49,.18);border:1px solid #fff}
+#login .lh{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+#login h2{margin:0;font-size:17px;font-weight:800;line-height:1.25}
+#login h2 small{display:block;font-size:12px;color:var(--mut);font-weight:500;margin-top:2px}
+#login label{display:block;font-size:12.5px;font-weight:600;margin:12px 0 5px;color:var(--ink2)}
+#login input{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;outline:none;transition:border .15s,box-shadow .15s}
+#login input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(232,89,12,.15)}
+#login .pw{position:relative}
+#login .pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--mut);font-size:12px;font-weight:600;padding:6px}
+#lgBtn{width:100%;margin-top:18px;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--ink2),var(--ink));box-shadow:0 6px 16px rgba(16,34,49,.25)}
+#lgBtn:disabled{opacity:.6}
+#lgMsg{min-height:18px;margin-top:10px;font-size:12.5px;color:#b42318;line-height:1.45}
+#login .cr{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut);line-height:1.5;text-align:center}
+#logoutBtn{display:none}
+#cnt{display:none;flex:none;align-items:center;gap:6px;font-weight:600;color:var(--ink2)}
+#cnt.show{display:inline-flex}
+#cnt b{font-weight:800;color:var(--ink)}
+#cnt .sep{color:#b7c3cc;margin:0 6px}
+#cnt .xl{display:inline-flex;align-items:center;gap:4px}
+#cnt::after{content:'';width:1px;height:12px;background:#c9d4dc;margin-left:8px}
+@media(max-width:899px){#cnt .xl{display:none}}
+.hi{color:var(--acc)}
+.rot{border:0;background:none;padding:9px 12px;font-size:13px;font-weight:600;border-radius:10px;white-space:nowrap;color:var(--ink2);display:flex;align-items:center;gap:6px;border-left:1px solid var(--line);border-radius:0 10px 10px 0}
+.rot svg{width:16px;height:16px}
+.rot.on{color:var(--acc)}
+.rot.on svg{animation:rs 2.4s linear infinite}
+@keyframes rs{to{transform:rotate(360deg)}}
+@media(max-width:899px){.rot{padding:9px 9px}.rot span{display:none}.rot svg{width:18px;height:18px}}
+@media(min-width:600px) and (max-width:899px){.rot span{display:inline}}
 </style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="map"></div>
 
-<div id="hud" class="glass">
-  <svg id="gauge" viewBox="0 0 100 100">
-    <path d="M15 75 A40 40 0 1 1 85 75" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="9" stroke-linecap="round"/>
-    <path id="garc" d="M15 75 A40 40 0 1 1 85 75" fill="none" stroke="#ff7a00" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
-    <text id="gval" x="50" y="56" text-anchor="middle" font-size="24" font-weight="800" fill="#fff">0</text>
-    <text x="50" y="72" text-anchor="middle" font-size="10" fill="#9fb0c6">km/h</text>
-  </svg>
-  <div>
-    <div id="hudTitle">ĐSTĐC Bắc – Nam</div>
-    <div class="hrow">Lý trình: <b id="hkm">Km 0+000</b></div>
-    <div class="hrow hx">Ga kế tiếp: <b id="hnext">—</b></div>
-    <div class="hrow hx">Hành trình: <b id="htime">00:00:00</b> · Giờ: <b id="hclock">06:00</b></div>
-    <div id="struct" class="hx" style="background:#ff7a00;color:#111">Cầu cạn</div>
-  </div>
+<div id="login">
+  <form id="lgForm" autocomplete="on">
+    <div class="lh"><div class="logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M7 3h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z"/><path d="M4 11h16M8 21l2-4M16 21l-2-4"/></svg></div>
+      <h2><span class="hi">Hi</span>Track<small>Mô hình 3D kết cấu đường sắt tốc độ cao</small></h2></div>
+    <div style="font-size:13px;color:var(--mut)">Vui lòng đăng nhập để xem mô hình.</div>
+    <label for="lgUser">Tên đăng nhập</label>
+    <input id="lgUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    <label for="lgPass">Mật khẩu</label>
+    <div class="pw"><input id="lgPass" name="password" type="password" autocomplete="current-password" required><button type="button" id="lgEye">Hiện</button></div>
+    <button id="lgBtn" type="submit">Đăng nhập</button>
+    <div id="lgMsg" role="alert"></div>
+    <div class="cr">HiTrack © TS. Đặng Minh Tân · Bộ môn Đường bộ – Sân bay<br>Khoa Công trình và Môi trường · Trường Đại học Giao thông Vận tải</div>
+  </form>
 </div>
-
-<button id="togglePanel" class="glass">☰</button>
-
-<div id="panel" class="glass">
-  <div class="tabs">
-    <button data-t="plan" class="on">Kế hoạch</button>
-    <button data-t="tt">Lịch tàu</button>
-    <button data-t="set">Thiết lập</button>
-    <button data-t="info">Dự án</button>
+<div id="app">
+  <div id="view">
+    <div id="loading" style="display:flex"><div class="spin"></div><div id="ldTxt">Đang kết nối máy chủ…</div></div>
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
   </div>
-  <div class="body">
-    <div class="tab on" id="tab-plan">
-      <label class="row">Kế hoạch chạy tàu
-        <select id="planSel"><option value="p1">Giai đoạn đầu (2 đôi nhanh, 2 đôi thường, 2 đôi khu đoạn)</option><option value="p2">Tăng cường (tàu nhanh mỗi giờ, 5 đôi khu đoạn)</option></select></label>
-      <label class="row">Giãn cách tối thiểu cùng đường <b id="hwv">5 phút</b></label>
-      <input type="range" id="hw" min="3" max="10" step="1" value="5" style="width:100%">
-      <canvas id="plan"></canvas>
-      <div class="legend" style="margin:4px 0"><span><i style="background:#e53935"></i>Nhanh</span><span><i style="background:#1e88e5"></i>Thường 2A</span><span><i style="background:#8e24aa"></i>Thường 2B</span><span><i style="background:#43a047"></i>Khu đoạn</span></div>
-      <div class="note" id="planSum"></div>
-      <table><thead><tr><th>Tàu</th><th>Hành trình</th><th>Đi</th><th>Đến</th><th>Lùi/Tránh</th></tr></thead><tbody id="planList"></tbody></table>
-    </div>
-    <div class="tab" id="tab-tt">
-      <canvas id="chart"></canvas>
-      <div class="note" id="sumline"></div>
-      <table><thead><tr><th>Ga</th><th>Km</th><th>Đến / Qua</th><th>Đi</th></tr></thead><tbody id="ttbody"></tbody></table>
-    </div>
-    <div class="tab" id="tab-set">
-      <label class="row">Tốc độ tối đa tàu nhanh <b id="vmaxv">350 km/h</b></label>
-      <input type="range" id="vmax" min="200" max="350" step="10" value="350" style="width:100%">
-      <label class="row">Thời gian dừng mỗi ga <b id="dwellv">2 phút</b></label>
-      <input type="range" id="dwell" min="1" max="5" step="1" value="2" style="width:100%">
-      <h4>Bản đồ nền (OpenStreetMap)</h4>
-      <div class="seg" id="basemaps">
-        <button data-b="none">Nền nhúng</button>
-        <button data-b="osm" class="on">OSM chuẩn*</button>
-        <button data-b="topo">OpenTopoMap</button>
-        <button data-b="hot">OSM Nhân đạo</button>
-        <button data-b="sat">Ảnh vệ tinh</button>
+  <div class="top">
+    <div class="tbar">
+      <div class="brand glass">
+        <div class="logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M7 3h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z"/><path d="M4 11h16M8 21l2-4M16 21l-2-4"/><circle cx="8.5" cy="14" r=".6" fill="#ff8a3d"/><circle cx="15.5" cy="14" r=".6" fill="#ff8a3d"/></svg></div>
+        <h1><span class="hi">Hi</span>Track<small>Mô hình 3D kết cấu đường sắt tốc độ cao</small></h1>
       </div>
-      <div class="note" id="offnote" style="display:none;color:#ffcc80">Môi trường hiện tại chặn tải ô bản đồ/địa hình trực tuyến → đang dùng nền nhúng (Natural Earth 1:10m: bờ biển, ranh giới tỉnh cũ, sông, đường chính; địa hình SRTM30 Plus ≈ 900 m/điểm) và cảnh quan minh họa dọc tuyến. Mở trang trên trình duyệt thường để có nền OSM và địa hình 3D.</div>
-      <label class="row"><span>Cảnh quan minh họa dọc tuyến</span><input type="checkbox" id="scn" checked></label>
-      <div class="note">* Máy chủ tile.openstreetmap.org chặn trang mở trực tiếp từ file trên máy (không có Referer); dùng được khi trang đặt trên web (GitHub Pages).</div>
-      <label class="row"><span>Địa hình 3D (DEM)</span><input type="checkbox" id="terrain" checked></label>
-      <label class="row"><span>Phóng đại địa hình <b id="exv">1.5×</b></span><input type="range" id="exag" min="1" max="3" step="0.5" value="1.5"></label>
-      <label class="row"><span>Màu phân tầng độ cao</span><input type="checkbox" id="tint" checked></label>
-      <label class="row"><span>Đường đồng mức</span><input type="checkbox" id="cntOn" checked></label>
-      <div class="note">Khoảng cao đều tự đổi theo mức phóng (500 → 10 m); đường cái (đậm, có ghi số) cách 5 khoảng. Tính từ DEM SRTM30 Plus ≈ 900 m nên chỉ thể hiện địa hình tổng quát.</div>
-      <label class="row"><span>Nhà 3D từ dữ liệu OSM</span><input type="checkbox" id="bld" checked></label>
-      <label class="row"><span>Tự thu gọn giao diện khi tàu chạy (sau 6 giây)</span><input type="checkbox" id="autoClean" checked></label>
-      <label class="row"><span>Ga hàng hóa</span><input type="checkbox" id="frt" checked></label>
-      <h4>Chú giải tuyến</h4>
-      <div class="legend"><span><i style="background:#ff7a00"></i>Cầu cạn</span><span><i style="background:#2e9d57"></i>Nền đắp</span><span><i style="background:#a1673a"></i>Nền đào</span><span><i style="background:#6b6b6b"></i>Hầm</span></div>
-      <div class="note">Mẹo: kéo/xoay bản đồ sẽ chuyển sang camera “Tự do”. Bấm vào tên ga trong bảng để bay tới ga đó.</div>
+      <div class="spacer"></div>
+      <button class="ibtn glass" id="optBtn" aria-label="Tùy chọn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="lbl-t" id="optSum">Tùy chọn</span></button>
+      <button class="ibtn glass" id="infoBtn" aria-label="Thông tin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M14 4v16M17 8h1M17 11h1"/></svg><span class="lbl-t">Thông tin</span></button>
     </div>
-    <div class="tab" id="tab-info">
-      <div class="discNote"><b>TUYÊN BỐ MIỄN TRỪ TRÁCH NHIỆM</b>
-        <p>Đây là <b>mô hình mô phỏng phục vụ giảng dạy, học tập và nghiên cứu</b>, <b>không phải</b> hồ sơ thiết kế, tài liệu hay sản phẩm chính thức của Dự án đường sắt tốc độ cao trên trục Bắc – Nam.</p>
-        <ul>
-          <li>Hướng tuyến, vị trí ga, trắc dọc, cầu – hầm – nền, giao cắt đường bộ, kế hoạch chạy tàu, biểu đồ chạy tàu và giao diện buồng lái được <b>mô phỏng</b> từ thông tin công khai trên báo chí và dữ liệu mở (OpenStreetMap, Natural Earth, SRTM). Mọi nội dung chỉ mang tính minh họa.</li>
-          <li>Số liệu và hình ảnh có thể <b>khác đáng kể so với thực tế</b>. Không sử dụng cho thiết kế, thi công, đầu tư, giao dịch bất động sản hay bất kỳ quyết định nào.</li>
-          <li>Nội dung không đại diện cho quan điểm của cơ quan nhà nước, chủ đầu tư hay đơn vị tư vấn.</li>
-        </ul>
-        <p>Tác giả không chịu trách nhiệm về việc sử dụng mô hình ngoài mục đích học tập.</p></div>
-      <div class="kv">
-        <div>Chiều dài</div><div>≈ 1.541 km, Ngọc Hồi (Hà Nội) → Thủ Thiêm (TP.HCM)</div>
-        <div>Quy mô</div><div>Đường đôi, khổ 1.435 mm, điện khí hóa</div>
-        <div>Tốc độ thiết kế</div><div>350 km/h</div>
-        <div>Nhà ga</div><div>23 ga hành khách (cự ly TB ≈ 67 km), 5 ga hàng hóa; tên xã/phường, tỉnh theo đơn vị hành chính sau sắp xếp 2025 (xem bảng Lịch tàu)</div>
-        <div>Depot hành khách</div><div>Ngọc Hồi, Vinh, Đà Nẵng, Nha Trang, Long Trường</div>
-        <div>Kết cấu</div><div>≈ 60% cầu cạn, 10% hầm, 30% nền đất (báo cáo tiền khả thi)</div>
-        <div>Mô hình</div><div id="alignStat">—</div>
-        <div>Tổng vốn</div><div>≈ 67 tỷ USD (≈ 1,7 triệu tỷ đồng)</div>
-        <div>Khởi công</div><div>Mục tiêu trước 31/12/2026; hoàn thành cơ bản 2035</div>
-        <div>Thời gian chạy</div><div>Tàu nhanh ≈ 5 giờ 20 phút; tàu thường (320 km/h, dừng 2 phút/ga) ≈ 6 giờ 50 phút</div>
-      </div>
-      <div class="note"><b>Lưu ý mô hình:</b> vị trí ga lấy theo mô tả công bố, tên xã/phường và tỉnh ghi theo đơn vị hành chính sau sắp xếp 2025 (34 tỉnh, thành); ga Mương Mán đã đổi thành ga Phan Thiết (dời ≈ 4 km về phía Bắc); ga Xuân Hòa (Đồng Nai) mới ở giai đoạn đề xuất nghiên cứu bổ sung nên chưa đưa vào mô hình, hướng tuyến nội suy trơn qua các điểm khống chế nên chỉ mang tính minh họa. Lý trình hiển thị được quy đổi theo tổng chiều dài 1.541 km. Phân đoạn cầu/nền và vị trí hầm (Tam Điệp, Hoành Sơn, Hải Vân, Cù Mông, Đèo Cả) là giả định minh họa. Tàu nhanh dừng tại Ngọc Hồi – Vinh – Đà Nẵng – Diên Khánh (Nha Trang) – Thủ Thiêm (giả định 5 ga). Góc nhìn buồng lái mô phỏng kiểu TGV/LGV Pháp: tín hiệu trong buồng lái TVM 430 (không có đèn tín hiệu bên đường), bảng mốc phân khu nền xanh – tam giác vàng mỗi ≈1,5 km; mã tốc độ TVM suy từ đường cong hãm tới ga dừng (minh họa). Mô phỏng động học: gia tốc kéo giảm theo tốc độ (0,6 → 0,15 m/s²), hãm thường 0,5 m/s², hạn chế 160 km/h trong 6 km đầu mối đô thị.</div>
-      <h4>Nguồn tra cứu</h4>
-      <div class="note">
-        <a href="https://vnexpress.net/khoi-cong-hai-doan-duong-sat-toc-do-cao-cuoi-nam-2027-4800513.html" target="_blank">VnExpress – quy mô 1.541 km, 23 ga</a><br>
-        <a href="https://tapchicongthuong.vn/vi-tri-du-kien-dat-23-ga-hanh-khach-cua-tuyen-duong-sat-toc-do-cao-tren-truc-bac-nam-127726.htm" target="_blank">Tạp chí Công Thương – vị trí 23 ga, depot</a><br>
-        <a href="https://baohatinh.vn/ba-loai-tau-khach-toc-do-cao-bac-nam-post277603.html" target="_blank">Báo Hà Tĩnh – ba loại tàu khách</a><br>
-        <a href="https://baohatinh.vn/tau-toc-do-cao-chay-ha-noi-tp-ho-chi-minh-trong-hon-5-gio-post166116.html" target="_blank">Báo Hà Tĩnh – tỷ lệ cầu/hầm/nền</a><br>
-        <a href="https://en.baochinhphu.vn/viet-nam-to-start-construction-of-north-south-high-speed-railway-next-year-111260909105900752.htm" target="_blank">Báo Chính phủ – khởi công 12/2026</a><br>
-        Bản đồ nền © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>; nhà 3D: OpenFreeMap; DEM: Terrarium (AWS Terrain Tiles).
-      </div>
-      <div class="note" id="views" style="margin-top:14px;color:#ffd27f"></div>
-      <div class="note" style="margin-top:14px">© TS. Đặng Minh Tân – Bộ môn Đường bộ – Sân bay | Khoa Công trình và Môi trường | Trường Đại học Giao thông Vận tải. Tài liệu phục vụ giảng dạy và nghiên cứu.</div>
+    <div class="chips" id="sysChips"></div>
+  </div>
+  <div class="opts glass" id="opts">
+    <h3>Tùy chọn mô hình</h3>
+    <div class="orow"><span class="ol">Nền móng</span><div class="seg" id="subSeg"></div></div>
+    <div class="orow" id="spdRow"><span class="ol">Tốc độ thiết kế</span><div class="seg" id="spdSeg"></div></div>
+    <div class="orow" id="varRow"><span class="ol">Loại tấm</span><div class="seg" id="varSeg"></div></div>
+    <div class="orow"><span class="ol">Chiều dài đoạn</span><div class="seg" id="lenSeg"></div></div>
+    <div class="orow"><span class="ol">Đoàn tàu</span><div class="seg" id="trSeg"></div></div>
+    <div class="orow"><span class="ol">Hiển thị</span><div class="sw"><button class="tg on" id="tgLabels">Số hiệu</button><button class="tg on" id="tgOcs">Lưới điện</button></div></div>
+  </div>
+  <div id="hint">Chạm vào bộ phận để xem · kéo để xoay · chụm để phóng to</div>
+  <div class="bottom glass">
+    <div class="views" id="views">
+      <button data-v="3d" class="on" title="Phối cảnh 3D"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg><span>3D</span></button>
+      <button data-v="sec" title="Mặt cắt ngang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 20h18M5 20l3-6h8l3 6M8 14V9h8v5M10 9V6h4v3"/></svg><span>Mặt cắt</span></button>
+      <button data-v="zoom" title="Cận cảnh ray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.5-4.5M8 13h5M10.5 8v5"/></svg><span>Ray</span></button>
+      <button data-v="nose" title="Đầu tàu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 16h14c2.5 0 4-1.5 4-3s-3-5-9-5H3"/><path d="M13 8c1 1.5 1.5 3 1.5 4.5M3 19h18"/></svg><span>Đầu tàu</span></button>
     </div>
+    <button class="rot on" id="rotBtn" title="Tự động xoay mô hình"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg><span>Tự xoay</span></button>
+    <label class="exp" title="Tách lớp kết cấu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 4-9 4-9-4z"/><path d="m3 12 9 4 9-4M3 17l9 4 9-4"/></svg><span>Tách lớp</span><input type="range" id="explode" min="0" max="100" value="0"></label>
   </div>
+  <div id="card" class="glass"></div>
+  <aside id="drawer">
+    <div class="grab" id="grab"><span></span></div>
+    <div class="dh"><b id="dT">Thông tin</b><button class="x" id="dClose" aria-label="Đóng">✕</button></div>
+    <div class="tabs" id="tabs"><button data-t="parts" class="on">Cấu tạo</button><button data-t="spec">Thông số</button><button data-t="cmp">So sánh</button><button data-t="src">Nguồn &amp; lưu ý</button></div>
+    <div class="content" id="content"></div>
+  </aside>
+  <footer id="foot"><span id="cnt" title="Bộ đếm truy cập"></span><span class="au">HiTrack © TS. Đặng Minh Tân · Bộ môn Đường bộ – Sân bay, Khoa Công trình và Môi trường, Trường Đại học Giao thông Vận tải</span><button id="discBtn">Lưu ý sử dụng</button><button id="logoutBtn" title="Đăng xuất">Đăng xuất</button></footer>
 </div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
-<div id="bar" class="glass">
-  <button id="play">▶ Chạy</button>
-  <button id="uiBtn" title="Thu gọn / mở rộng giao diện">⤡</button>
-  <button id="reset" title="Về ga xuất phát">⟲</button>
-  <select id="mult" title="Tua nhanh thời gian">
-    <option value="1">1× thực</option><option value="5">5×</option><option value="20">20×</option>
-    <option value="60">60×</option><option value="300">300×</option><option value="1200">1200×</option>
-  </select>
-  <div class="seg" id="cams">
-    <button data-c="chase" class="on">Bám đuôi</button>
-    <button data-c="side">Bên hông</button>
-    <button data-c="cab">Buồng lái</button>
-    <button data-c="winL">Cửa sổ trái</button>
-    <button data-c="winR">Cửa sổ phải</button>
-    <button data-c="air">Trên cao</button>
-    <button data-c="all">Toàn tuyến</button>
-    <button data-c="free">Tự do</button>
-  </div>
-  <input type="range" id="seek" min="0" max="86400" value="0">
-</div>
-<div id="toast" class="glass"></div>
-<div id="discBadge">Mô phỏng phục vụ học tập · Không phải dự án thực tế ⓘ</div>
-<div id="disc"><div class="glass box">
-        <b>TUYÊN BỐ MIỄN TRỪ TRÁCH NHIỆM</b>
-        <p>Đây là <b>mô hình mô phỏng phục vụ giảng dạy, học tập và nghiên cứu</b>, <b>không phải</b> hồ sơ thiết kế, tài liệu hay sản phẩm chính thức của Dự án đường sắt tốc độ cao trên trục Bắc – Nam.</p>
-        <ul>
-          <li>Hướng tuyến, vị trí ga, trắc dọc, cầu – hầm – nền, giao cắt đường bộ, kế hoạch chạy tàu, biểu đồ chạy tàu và giao diện buồng lái được <b>mô phỏng</b> từ thông tin công khai trên báo chí và dữ liệu mở (OpenStreetMap, Natural Earth, SRTM). Mọi nội dung chỉ mang tính minh họa.</li>
-          <li>Số liệu và hình ảnh có thể <b>khác đáng kể so với thực tế</b>. Không sử dụng cho thiết kế, thi công, đầu tư, giao dịch bất động sản hay bất kỳ quyết định nào.</li>
-          <li>Nội dung không đại diện cho quan điểm của cơ quan nhà nước, chủ đầu tư hay đơn vị tư vấn.</li>
-        </ul>
-        <p>Tác giả không chịu trách nhiệm về việc sử dụng mô hình ngoài mục đích học tập.</p>
-        <label style="display:flex;gap:8px;align-items:center;font-size:12px;color:#9fb0c6;margin:6px 0 10px"><input type="checkbox" id="discNo"> Không hiện lại trên thiết bị này (30 ngày)</label>
-        <button id="discOk" style="width:100%;background:#38c172;color:#06210f;font-weight:700">Tôi đã hiểu</button>
-</div></div>
-<div id="cabv">
-  <div class="wsf"><div class="glassw"></div><div class="wiper"></div><div id="cabTun"></div></div>
-  <div class="dash">
-    <div class="ins"><svg id="spd" viewBox="0 0 120 120"></svg><div class="lbl">km/h</div></div>
-    <div class="ins mid">
-      <div class="lbl">TVM 430</div><div id="tvm">350</div>
-      <div class="lever"><div id="levbar"></div></div><div id="levtx" class="lbl">—</div>
-    </div>
-    <div class="ins dmi" id="dmi"></div>
-  </div>
-</div>
-<div id="cabin"><div class="frame"></div><div class="win"></div><div class="seat s1"></div><div class="seat s2"></div><div class="tray"></div><div id="tunnelTxt">🚇 Đang trong hầm</div></div>
+/* URL Web App của Apps Script (đuôi /exec) */
+    const API = 'https://script.google.com/macros/s/AKfycbxDr2nYfj-IHbM_fKf4B_RnOrpHAmGd7Bess0ctHB9wC0L_c6Prx5_6rYuJpTIkesRH6g/exec';
+const KEY = 'hitrack_token';
+/* Mã khách ngẫu nhiên lưu trong trình duyệt – chỉ để đếm số người xem */
+const VID = (()=>{ try{ let v=localStorage.getItem('hitrack_vid'); if(!v){ v=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)); localStorage.setItem('hitrack_vid',v);} return v; }catch(e){ return ''; } })();
+const $ = id => document.getElementById(id);
 
-<div id="errbox" style="display:none;position:absolute;left:10px;right:10px;top:120px;z-index:20;background:#b71c1c;color:#fff;padding:10px 12px;border-radius:10px;font-size:13px;white-space:pre-wrap"></div>
-<script>
-function showErr(m){if(m==='Script error.'||m==='Script error. (dòng 0)'){m='Lỗi trong thư viện bản đồ (Script error). Hãy tải lại trang.';if(window.__se)return;window.__se=1;}const b=document.getElementById('errbox');b.style.display='block';b.textContent+=(b.textContent?'\n':'')+'⚠ '+m;}
-window.addEventListener('error',e=>window.__nolib||showErr((e.message||'Lỗi')+(e.lineno?' (dòng '+e.lineno+')':'')));
-window.addEventListener('unhandledrejection',e=>showErr(String(e.reason&&e.reason.message||e.reason)));
-if(typeof maplibregl==='undefined'){setTimeout(()=>window.__nolib=1);showErr('Không tải được thư viện bản đồ MapLibre (unpkg.com). Trang cần mở bằng trình duyệt có Internet (Chrome/Edge/Safari), không mở trong trình xem file của ứng dụng.');window.__nolib=1;}
-</script>
-<div id="boot" style="position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#0b1220">
-  <div class="glass" style="padding:18px 20px;width:min(340px,90vw);text-align:center">
-    <div style="font-weight:800;font-size:16px;margin-bottom:4px">ĐSTĐC Bắc – Nam 3D</div>
-    <div id="bootMsg" style="font-size:13px;color:#9fb0c6">Đang kết nối máy chủ…</div>
-    <div style="font-size:11px;color:#ff8a80;margin-top:8px">Mô hình mô phỏng phục vụ học tập – không phải hồ sơ hay sản phẩm chính thức của dự án.</div>
-    <form id="loginF" style="display:none;margin-top:12px;text-align:left">
-      <label class="row" style="margin:6px 0">Tài khoản <input id="lu" autocomplete="username" style="flex:1;margin-left:8px;padding:6px;border-radius:8px;border:0"></label>
-      <label class="row" style="margin:6px 0">Mật khẩu <input id="lp" type="password" autocomplete="current-password" style="flex:1;margin-left:8px;padding:6px;border-radius:8px;border:0"></label>
-      <div id="loginErr" style="color:#ff8a80;font-size:12px;min-height:16px"></div>
-      <button type="submit" style="width:100%;background:#38c172;color:#06210f;font-weight:700">Đăng nhập</button>
-    </form>
-  </div>
-</div>
-<script>
-
-    const GAS_URL ='https://script.google.com/macros/s/AKfycbyavw4YXyrBYXAQoNRJzuSCIxjqryn1788qTCASF9Aargy7zvS69pOxk1tPl_nexFIjKA/exec';
-const BUILD='20261125a';   // phải khớp với Core.gs cùng bộ   // ví dụ https://script.google.com/macros/s/AKfy.../exec
-(function(){
-  const msg=t=>document.getElementById('bootMsg').textContent=t;
-  const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-  const ua=encodeURIComponent((navigator.userAgent||'').slice(0,120));
-  async function tfetch(u,o,ms){const ac=new AbortController();const t=setTimeout(()=>ac.abort(),ms||30000);try{return await fetch(u,Object.assign({signal:ac.signal},o||{}));}finally{clearTimeout(t);}}
-  async function getJSON(u){const r=await tfetch(u);return r.json();}
-  async function fetchCore(tok){const r=await tfetch(GAS_URL+'?a=core&t='+encodeURIComponent(tok||'')+'&ua='+ua+'&b='+BUILD+'&r='+Date.now(),null,45000);return r.text();}
-  const t0=Date.now();const tick=setInterval(()=>{const el=document.getElementById('bootMsg');if(!el)return clearInterval(tick);const s=Math.round((Date.now()-t0)/1000);if(s>=8&&!/giây/.test(el.textContent))el.textContent+=' ('+s+' giây – Apps Script khởi động lần đầu có thể mất 10–20 giây)';else if(s>=8)el.textContent=el.textContent.replace(/\(\d+ giây/,'('+s+' giây');},1000);
-  const mismatch=()=>{msg('Lõi trên Apps Script (Core.gs) chưa khớp với index.html này (bản '+BUILD+'). Hãy dán Core.gs mới, rồi Triển khai → Quản lý tùy chọn triển khai → Phiên bản mới.');};
-  function run(code){const sc=document.createElement('script');sc.textContent=code;document.body.appendChild(sc);document.getElementById('boot').remove();}
-  function login(){return new Promise(res=>{const f=document.getElementById('loginF');f.style.display='block';msg('Trang yêu cầu đăng nhập');
-    f.onsubmit=async ev=>{ev.preventDefault();document.getElementById('loginErr').textContent='';msg('Đang kiểm tra…');
-      try{const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({a:'login',u:document.getElementById('lu').value.trim(),p:document.getElementById('lp').value})});
-        const j=await r.json();if(j.ok){LS.set('hitrain_tok',j.token);LS.set('hitrain_name',j.name||'');f.style.display='none';res(j.token);}
-        else{document.getElementById('loginErr').textContent=j.msg||'Sai tài khoản hoặc mật khẩu';msg('Trang yêu cầu đăng nhập');}}
-      catch(e){document.getElementById('loginErr').textContent='Không kết nối được máy chủ';}};});}
-  const tokValid=t=>{if(!t)return false;const p=t.split('.');return p.length===3&&+p[1]>Date.now();};
-  async function boot(){
-    if(GAS_URL.indexOf('http')!==0){msg('Chưa cấu hình GAS_URL trong index.html');return;}
-    let cfg;try{cfg=await getJSON(GAS_URL+'?a=cfg&ua='+ua);}catch(e){msg('Không kết nối được máy chủ Apps Script (kiểm tra GAS_URL và quyền truy cập "Bất kỳ ai"). Thử tải lại trang.');return;}
-    window.HITRAIN_CFG=cfg;
-    let code=null;
-    if(cfg.login){
-      let tok=LS.get('hitrain_tok');if(!tokValid(tok))tok=await login();
-      msg('Đang tải lõi mô phỏng…');code=await fetchCore(tok);
-      if(code.indexOf('/*AUTH*/')===0){LS.del('hitrain_tok');tok=await login();msg('Đang tải lõi mô phỏng…');code=await fetchCore(tok);}
-      if(code.indexOf('/*AUTH*/')===0){msg('Không có quyền truy cập');return;}
-      if(code.indexOf(BUILD)<0){mismatch();return;}
-    }else{
-      const key='hitrain_core_'+cfg.version+'_'+BUILD;code=LS.get(key);if(code&&code.indexOf(BUILD)<0)code=null;
-      if(!code){msg('Đang tải lõi mô phỏng…');try{code=await fetchCore('');}catch(e){msg('Tải lõi quá lâu hoặc lỗi mạng. Thử tải lại trang.');return;}if(code.indexOf(BUILD)<0){mismatch();return;}if(code.indexOf('/*AUTH*/')!==0){
-        try{Object.keys(localStorage).filter(k=>k.indexOf('hitrain_core_')===0).forEach(k=>localStorage.removeItem(k));}catch(e){}LS.set(key,code);}}
-    }
-    run(code);
-    const v=document.getElementById('views');if(v)v.textContent='Lượt truy cập: '+Number(cfg.views||0).toLocaleString('vi-VN')+(cfg.login&&LS.get('hitrain_name')?' · Người dùng: '+LS.get('hitrain_name'):'');
+async function call(payload){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(API))
+    throw new Error('Chưa dán đúng URL Web App vào dòng const API trong index.html (dạng https://script.google.com/macros/s/.../exec).');
+  Object.assign(payload,{vid:VID,ua:navigator.userAgent,scr:screen.width+'×'+screen.height,page:location.host+location.pathname});
+  let r;
+  try{ r = await fetch(API,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); }
+  catch(e){ throw new Error('Không gọi được máy chủ. Kiểm tra kết nối mạng hoặc URL Web App.'); }
+  const t = await r.text();
+  if(!r.ok) throw new Error('Máy chủ báo lỗi HTTP '+r.status+'.');
+  try{ return JSON.parse(t); }
+  catch(e){
+    if(/<html|<!doctype/i.test(t)) throw new Error('Máy chủ trả về trang của Google thay vì dữ liệu: bản triển khai chưa đặt "Người có quyền truy cập: Bất kỳ ai", hoặc URL không phải bản /exec mới nhất.');
+    throw new Error('Dữ liệu trả về không hợp lệ.');
   }
-  window.addEventListener('load',boot);
-})();
+}
+function showStats(s){
+  if(!s) return; const n=x=>Number(x||0).toLocaleString('vi-VN'), el=$('cnt');
+  el.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'
+    +'<b>'+n(s.total)+'</b>&nbsp;lượt xem<span class="xl"><span class="sep">·</span><b>'+n(s.uniq)+'</b>&nbsp;người<span class="sep">·</span>hôm nay&nbsp;<b>'+n(s.today)+'</b></span>';
+  el.title='Tổng lượt xem: '+n(s.total)+' · Số người xem: '+n(s.uniq)+' · Hôm nay: '+n(s.today);
+  el.classList.add('show');
+}
+function run(code, user){
+  if(!code || code.length < 50000) throw new Error('Máy chủ không trả về đủ mã mô hình. Kiểm tra file core.html trong Apps Script.');
+  $('login').classList.remove('show');
+  try{ new Function('THREE','OrbitControls','mergeGeometries', code)(THREE, OrbitControls, mergeGeometries); }
+  catch(e){ console.error(e); throw new Error('Mã mô hình lỗi khi chạy ('+e.message+'). Có thể core.html bị dán thiếu.'); }
+  if(user){ const b=$('logoutBtn'); b.style.display='inline'; b.textContent='Đăng xuất ('+user+')'; }
+}
+function fail(msg){
+  const l=$('loading'); if(!l) return alert(msg);
+  l.style.display='flex';
+  l.innerHTML='<div class="err"><b>Không mở được mô hình.</b><br>'+msg+'</div><button onclick="location.reload()">Thử lại</button>';
+}
+async function start(){
+  let tok=null; try{ tok=localStorage.getItem(KEY); }catch(e){}
+  try{
+    const d = await call({action:'init', token:tok});
+    if(!d.ok) throw new Error(d.message||'Máy chủ từ chối yêu cầu.');
+    if(d.code){ $('ldTxt').textContent='Đang dựng mô hình…'; run(d.code, d.loginRequired?d.user:null); showStats(d.stats); return; }
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    $('loading').style.display='none'; $('login').classList.add('show'); $('lgUser').focus();
+  }catch(err){ console.error(err); fail(err.message); }
+}
+$('lgEye').onclick=()=>{const p=$('lgPass');p.type=p.type==='password'?'text':'password';$('lgEye').textContent=p.type==='password'?'Hiện':'Ẩn';};
+$('lgForm').onsubmit=async e=>{
+  e.preventDefault(); const b=$('lgBtn'); b.disabled=true; b.textContent='Đang kiểm tra…'; $('lgMsg').textContent='';
+  try{
+    const d = await call({action:'login', user:$('lgUser').value.trim(), pass:$('lgPass').value});
+    if(d.ok && d.code){ if(d.token){ try{ localStorage.setItem(KEY,d.token); }catch(x){} }
+      $('loading').style.display='flex'; $('ldTxt').textContent='Đang dựng mô hình…';
+      setTimeout(()=>{ try{ run(d.code, d.loginRequired?d.user:null); showStats(d.stats); }catch(err){ fail(err.message); } },30); }
+    else $('lgMsg').textContent = d.message || 'Sai tên đăng nhập hoặc mật khẩu.';
+  }catch(err){ $('lgMsg').textContent = err.message; }
+  b.disabled=false; b.textContent='Đăng nhập';
+};
+$('logoutBtn').onclick=async()=>{
+  let tok=null; try{ tok=localStorage.getItem(KEY); localStorage.removeItem(KEY); }catch(e){}
+  try{ await call({action:'logout', token:tok}); }catch(e){}
+  location.reload();
+};
+/* Hạn chế xem mã nguồn (chỉ mang tính răn đe) */
+document.addEventListener('contextmenu',e=>{ if(!e.target.closest('input,textarea,.content')) e.preventDefault(); });
+document.addEventListener('keydown',e=>{ const k=e.key.toLowerCase();
+  if(k==='f12'||(e.ctrlKey&&(k==='u'||k==='s'))||(e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c'))) e.preventDefault(); });
+start();
 </script>
 </body>
 </html>
